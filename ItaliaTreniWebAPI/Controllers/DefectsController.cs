@@ -1,10 +1,8 @@
 ﻿using ItaliaTreniSharedLibrary.Models;
 using ItaliaTreniWebAPI.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 [Route("api/defects")]
 [ApiController]
@@ -19,17 +17,23 @@ public class DefectsController : ControllerBase
 
     // GET: api/defects
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Defect>>> GetDefects()
+    public async Task<ActionResult<IEnumerable<Defect>>> GetDefects(int PageNumber, int PageSize)
     {
-        return await _context.Defects.Include(d => d.Measurement).ToListAsync();
+        return await _context.Defects.OrderByDescending(d => d.ExceedAmount).Skip((PageNumber - 1) * PageSize).Take(PageSize).ToListAsync();
     }
 
     // POST: api/defects
     [HttpPost]
     public async Task<ActionResult<Defect>> PostDefect(Defect defect)
     {
-        _context.Defects.Add(defect);
-        await _context.SaveChangesAsync();
+        var sql = "INSERT INTO Defects (MeasurementId, Severity, ExceedAmount, Mm) VALUES (@Mid, @Sev, @ExAm, @Mm);";
+
+        await _context.Database.ExecuteSqlRawAsync(sql,
+            new SqlParameter("@Mid", defect.MeasurementId),
+            new SqlParameter("@Sev", defect.Severity),
+            new SqlParameter("@ExAm", defect.ExceedAmount),
+            new SqlParameter("@Mm", defect.Mm)
+        );
 
         return CreatedAtAction(nameof(GetDefects), new { id = defect.Id }, defect);
     }
