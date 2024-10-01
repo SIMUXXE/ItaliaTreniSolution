@@ -26,13 +26,14 @@ public class DefectsController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<Defect>> PostDefect(Defect defect)
     {
-        var sql = "INSERT INTO Defects (MeasurementId, Severity, ExceedAmount, Mm) VALUES (@Mid, @Sev, @ExAm, @Mm);";
+        var sql = "INSERT INTO Defects (MeasurementId, Severity, ExceedAmount, Mm) VALUES (@Mid, @Sev, @ExAm, @SMm, @EMm);";
 
         await _context.Database.ExecuteSqlRawAsync(sql,
-            new SqlParameter("@Mid", defect.MeasurementId),
-            new SqlParameter("@Sev", defect.Severity),
-            new SqlParameter("@ExAm", defect.ExceedAmount),
-            new SqlParameter("@Mm", defect.Mm)
+        new SqlParameter("@Mid", defect.MeasurementId),
+        new SqlParameter("@Sev", defect.Severity),
+        new SqlParameter("@ExAm", defect.ExceedAmount),
+        new SqlParameter("@SMm", defect.StartMm),
+        new SqlParameter("@EMm", defect.EndMm)
         );
 
         return CreatedAtAction(nameof(GetDefects), new { id = defect.Id }, defect);

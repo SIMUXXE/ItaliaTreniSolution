@@ -2,6 +2,9 @@
 using ItaliaTreniWebAPI.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.Json;
 
 [Route("api/analisys")]
 [ApiController]
@@ -26,10 +29,34 @@ public class AnalysisController : ControllerBase
         return Ok("Analisi completata e difetti registrati.");
     }
 
+    [HttpPost("customAnalysis")]
+    public async Task<IActionResult> CustomAnalysis(int start_Millimeters, int end_Millimeters, double threshold = 0.0)
+    {
+        List<Defect> res = new List<Defect>();
+        List<Measurement> data = await _context.Measurements.ToListAsync();
+        for (int i = start_Millimeters; i < end_Millimeters+1; i++)
+        {
+            if (data[i].P1 > threshold)
+                res.Add(new Defect(data[i].Id, "Unknown", (threshold - data[i].P1), data[i].Mm, 0));
+            if (data[i].P2 > threshold)
+                res.Add(new Defect(data[i].Id, "Unknown", (threshold - data[i].P2), data[i].Mm, 0));
+            if (data[i].P3 > threshold)
+                res.Add(new Defect(data[i].Id, "Unknown", (threshold - data[i].P3), data[i].Mm, 0));
+            if (data[i].P4 > threshold)
+                res.Add(new Defect(data[i].Id, "Unknown", (threshold - data[i].P4), data[i].Mm, 0));
+        }
+
+        if (res.Count > 0)
+        {
+            var jsonContent = JsonSerializer.Serialize(res);
+            return Ok(jsonContent);
+        }
+        return Ok("Nessun difetto trovato per i specificati");
+    }
+
     private async Task AnalyzeMeasurementsAsync()
     {
-        var data = await _context.Measurements.ToListAsync();
-        var savedDefects = await SearchDefects(data);
+        var savedDefects = await SearchDefects(await _context.Measurements.ToListAsync());
 
         if (savedDefects.Count() > 0)
             _context.Defects.AddRange(savedDefects);
@@ -54,6 +81,7 @@ public class AnalysisController : ControllerBase
 
         return defects;
     }
+
     private void CheckAndAddDefect(Measurement measurement, double value, double[] thresholds, string parameterName, List<Defect> saveArray)
     {
         Defect defect = null;
@@ -66,7 +94,7 @@ public class AnalysisController : ControllerBase
                     MeasurementId = measurement.Id,
                     Severity = DetermineSeverity(i),
                     ExceedAmount = value - thresholds[i],
-                    Mm = measurement.Mm
+                    StartMm = measurement.Mm
                 };
             }
         }
@@ -74,16 +102,12 @@ public class AnalysisController : ControllerBase
     }
     private string DetermineSeverity(int index)
     {
-        switch (index)
+        return index switch
         {
-            case 0:
-                return "Lieve";
-            case 1:
-                return "Medio";
-            case 2:
-                return "Grave";
-            default:
-                return "Unknown";
-        }
+            0 => "Lieve",
+            1 => "Medio",
+            2 => "Grave",
+            _ => "Unknown"
+        };
     }
 }

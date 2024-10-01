@@ -12,15 +12,18 @@ namespace ItaliaTreniSharedLibrary.Models
         public int MeasurementId { get; set; }
         public string Severity { get; set; } 
         public double ExceedAmount { get; set; } 
-        public int Mm { get; set; }
+        public int StartMm { get; set; }
+        public int EndMm { get; set; }
 
         public Defect() { }
-        public Defect(int Id, int measurementId, string severity, double exceedAmount, int mm)
+
+        public Defect(int measurementId, string severity, double exceedAmount, int startMm, int endMm)
         {
             MeasurementId = measurementId;
             Severity = severity;
             ExceedAmount = exceedAmount;
-            Mm = mm;
+            StartMm = startMm;
+            EndMm = endMm;
         }
     }
 }
